@@ -120,7 +120,7 @@
                 runspace_AzOpsPartialRoot       = $script:AzOpsPartialRoot
                 runspace_AzOpsResourceProvider  = $script:AzOpsResourceProvider
             }
-            $subscriptions | Foreach-Object -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
+            $subscriptions | Foreach-Object -UseNewRunspace -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
                 $subscription = $_
                 $runspaceData = $using:runspaceData
 

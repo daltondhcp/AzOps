@@ -134,7 +134,7 @@
                 $subscriptions = Get-AzOpsNestedSubscription -Scope $scopeObject.Name
                 if ($managementgroups) {
                     # Process managementGroup scope in parallel
-                    $managementgroups | Foreach-Object -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
+                    $managementgroups | Foreach-Object -UseNewRunspace -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
                         $managementgroup = $_
                         $runspaceData = $using:runspaceData
 
@@ -175,7 +175,7 @@
 
         #region Process subscription scope in parallel
         if ($subscriptions) {
-            $subscriptions | Foreach-Object -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
+            $subscriptions | Foreach-Object -UseNewRunspace -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
                 $subscription = $_
                 $runspaceData = $using:runspaceData
 
@@ -233,7 +233,7 @@
             }
             if ($resourceGroups) {
                 # Process Resource Groups in parallel
-                $resourceGroups | Foreach-Object -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
+                $resourceGroups | Foreach-Object -UseNewRunspace -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
                     $resourceGroup = $_
                     $runspaceData = $using:runspaceData
 
@@ -287,14 +287,14 @@
             if (-not $SkipResource) {
                 Write-PSFMessage -Level Verbose @msgCommon -String 'Get-AzOpsResourceDefinition.Processing.Resource.Discovery' -StringValues $scopeObject.Name
                 try {
-                    $SkipResourceType | ForEach-Object { $skipResourceTypes += ($(if($skipResourceTypes){","}) + "'" + $_  + "'") }
+                    $SkipResourceType | ForEach-Object { $skipResourceTypes += ($(if ($skipResourceTypes) { "," }) + "'" + $_ + "'") }
                     $query = "resources | where type !in~ ($skipResourceTypes)"
                     if ($IncludeResourceType -ne "*") {
-                        $IncludeResourceType | ForEach-Object { $includeResourceTypes += ($(if($includeResourceTypes){","}) + "'" + $_  + "'") }
+                        $IncludeResourceType | ForEach-Object { $includeResourceTypes += ($(if ($includeResourceTypes) { "," }) + "'" + $_ + "'") }
                         $query = $query + " and type in~ ($includeResourceTypes)"
                     }
                     if ($IncludeResourcesInResourceGroup -ne "*") {
-                        $IncludeResourcesInResourceGroup | ForEach-Object { $includeResourcesInResourceGroups += ($(if($includeResourcesInResourceGroups){","}) + "'" + $_  + "'") }
+                        $IncludeResourcesInResourceGroup | ForEach-Object { $includeResourcesInResourceGroups += ($(if ($includeResourcesInResourceGroups) { "," }) + "'" + $_ + "'") }
                         $query = $query + " and resourceGroup in~ ($includeResourcesInResourceGroups)"
                     }
                     $query = $query + " | order by ['id'] asc"
@@ -322,7 +322,7 @@
             }
             # Process resources as scope in parallel, look for childResource
             if (-not $SkipResource -and -not $SkipChildResource) {
-                $resources | Foreach-Object -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
+                $resources | Foreach-Object -UseNewRunspace -ThrottleLimit (Get-PSFConfigValue -FullName 'AzOps.Core.ThrottleLimit') -Parallel {
                     $resource = $_
                     $runspaceData = $using:runspaceData
 
@@ -356,7 +356,7 @@
                             } -RetryCount $runspaceData.MaxRetryCount -RetryWait $runspaceData.BackoffMultiplier -RetryType Exponential
                         }
                         $exportResources = (Get-Content -Path $tempExportPath | ConvertFrom-Json).resources
-                        $resourceGroup = $using:resourceGroups | Where-Object {$_.subscriptionId -eq $resource.subscriptionId -and $_.name -eq $resource.resourceGroup}
+                        $resourceGroup = $using:resourceGroups | Where-Object { $_.subscriptionId -eq $resource.subscriptionId -and $_.name -eq $resource.resourceGroup }
                         foreach ($exportResource in $exportResources) {
                             if (-not(($resource.name -eq $exportResource.name) -and ($resource.type -eq $exportResource.type))) {
                                 Write-PSFMessage -Level Verbose -String 'Get-AzOpsResourceDefinition.Processing.ChildResource' -StringValues $exportResource.name, $resource.resourceGroup -Target $exportResource
