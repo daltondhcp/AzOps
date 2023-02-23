@@ -22,9 +22,18 @@
     process {
         # Process Path with given Method
         Write-PSFMessage -Level Debug -String 'Invoke-AzOpsRestMethod.Processing' -StringValues $Path
+        $parameters = @{
+            Path    = $Path
+            Method  = $Method
+        }
         $allresults = do {
             try {
-                $results = ((Invoke-AzRestMethod -Path $Path -Method $Method -ErrorAction Stop).Content | ConvertFrom-Json -Depth 100)
+                $results = ((
+                    # Process invocation with retry and backoff support from Invoke-AzOpsScriptBlock
+                    Invoke-AzOpsScriptBlock -ArgumentList $parameters -ScriptBlock {
+                        Invoke-AzRestMethod @parameters -ErrorAction Stop
+                    } -RetryCount 3 -RetryWait 5 -RetryType Exponential -ErrorAction Stop
+                    ).Content | ConvertFrom-Json -Depth 100)
                 $results.value
                 $path = $results.nextLink -replace 'https://management\.azure\.com'
                 if ($results.StatusCode -eq '429' -or $results.StatusCode -like '5*') {
