@@ -40,10 +40,10 @@
             $parameters = @{
                 Scope = $ScopeObject.Scope
             }
-            # Gather PolicyExemption with retry and backoff support from Invoke-AzOpsScriptBlock
+            # Gather policyExemption with retry and backoff support from Invoke-AzOpsScriptBlock
             Invoke-AzOpsScriptBlock -ArgumentList $parameters -ScriptBlock {
                 Get-AzPolicyExemption @parameters -WarningAction SilentlyContinue -ErrorAction Stop | Where-Object ResourceId -match $parameters.Scope
-            } -RetryCount 2 -RetryWait 5 -RetryType Exponential -ErrorAction Stop
+            } -RetryCount 3 -RetryWait 5 -RetryType Exponential -ErrorAction Stop
         }
         catch {
             Write-PSFMessage -Level Warning -Message $_ -FunctionName "Get-AzOpsPolicyExemption"
